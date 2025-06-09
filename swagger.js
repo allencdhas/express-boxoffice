@@ -8,9 +8,32 @@ const swaggerOptions = {
       title: 'Box Office API',
       version: '1.0.0',
       description: 'API documentation for Box Office data',
+      contact: {
+        name: 'API Support',
+        email: 'support@example.com'
+      }
     },
+    servers: [
+      {
+        url: 'http://localhost:3000',
+        description: 'Development server'
+      }
+    ],
+    components: {
+      schemas: {
+        Error: {
+          type: 'object',
+          properties: {
+            error: {
+              type: 'string',
+              description: 'Error message'
+            }
+          }
+        }
+      }
+    }
   },
-  apis: ['./boxoff.js'], // path to the API docs
+  apis: ['./boxoff.js']
 };
 
 const swaggerSpec = swaggerJsDoc(swaggerOptions);
