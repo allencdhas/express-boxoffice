@@ -12,12 +12,44 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "src": "/api-docs",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/health",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/daily",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/weekend",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/weekly",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/monthly",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/seasonal",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/quarterly",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/yearly",
+      "dest": "/api/index.js"
     },
     {
       "src": "/(.*)",
-      "dest": "/api/$1"
+      "dest": "/api/index.js"
     }
   ]
 } 

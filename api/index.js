@@ -6,7 +6,6 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const app = express();
-const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
@@ -87,6 +86,7 @@ app.get('/daily', async (req, res) => {
     const result = await runPythonScript(path.join(__dirname, '../boxoff.py'), ['daily', date]);
     res.json(result);
   } catch (error) {
+    console.error('Error in /daily endpoint:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -300,6 +300,14 @@ app.get('/yearly', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
+}
 
 // Export the Express API
 module.exports = app; 
