@@ -5,8 +5,7 @@
   "main": "api/index.js",
   "scripts": {
     "start": "node api/index.js",
-    "dev": "nodemon api/index.js",
-    "vercel-build": "pip install -r requirements.txt"
+    "dev": "nodemon api/index.js"
   },
   "dependencies": {
     "express": "^4.18.2",
