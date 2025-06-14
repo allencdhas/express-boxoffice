@@ -1,8 +1,22 @@
 {
+  "name": "express-boxoffice",
+  "version": "1.0.0",
+  "description": "Box Office API with Express and Python",
+  "main": "boxoff.js",
+  "scripts": {
+    "start": "node boxoff.js",
+    "dev": "nodemon boxoff.js"
+  },
   "dependencies": {
-    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1",
-    "cors": "^2.8.5"
+    "swagger-ui-express": "^5.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
