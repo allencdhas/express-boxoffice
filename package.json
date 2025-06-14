@@ -5,7 +5,8 @@
   "main": "boxoff.js",
   "scripts": {
     "start": "node boxoff.js",
-    "dev": "nodemon boxoff.js"
+    "dev": "nodemon boxoff.js",
+    "vercel-build": "./vercel-build.sh"
   },
   "dependencies": {
     "cors": "^2.8.5",
