@@ -2,58 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "requirements.txt",
+      "src": "api/index.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/api-docs",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "/health",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "/daily",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "/weekend",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "/weekly",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "/monthly",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "/seasonal",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "/quarterly",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "/yearly",
-      "dest": "/api/index.js"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/api/index.js"
+      "dest": "/api/index.py"
     }
-  ],
-  "env": {
-    "PYTHONPATH": "/var/task",
-    "PYTHONUNBUFFERED": "1"
-  }
+  ]
 } 
