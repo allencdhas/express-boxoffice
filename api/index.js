@@ -31,8 +31,8 @@ app.get('/health', (req, res) => {
 // Helper function to run Python script
 const runPythonScript = (scriptPath, args) => {
   return new Promise((resolve, reject) => {
-    // In Vercel environment, use the system Python
-    const pythonPath = process.env.VERCEL ? 'python' : 'python3';
+    // In Vercel environment, use the full path to Python
+    const pythonPath = process.env.VERCEL ? '/opt/python/3.9/bin/python3.9' : 'python3';
     console.log('Using Python path:', pythonPath);
     console.log('Script path:', scriptPath);
     console.log('Arguments:', args);
