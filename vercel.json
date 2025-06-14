@@ -2,17 +2,18 @@
   "version": 2,
   "builds": [
     {
-      "src": "boxoff.js",
+      "src": "api/**/*.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "boxoff.js"
+      "dest": "/api/$1"
     }
-  ],
-  "env": {
-    "PYTHON_VERSION": "3.10"
-  }
+  ]
 } 

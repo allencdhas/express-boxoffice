@@ -1,9 +1,9 @@
 # Python requirements
-boxoffice_api==1.2.2
-pandas==2.3.0
-numpy==2.3.0
-requests==2.32.4
+boxoffice_api
+pandas
+numpy
+requests
 # For Node.js API, run: npm install express
 
-beautifulsoup4==4.13.4
-html5lib==1.1
+beautifulsoup4
+html5lib

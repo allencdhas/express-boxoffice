@@ -1,20 +1,45 @@
 const express = require('express');
-const cors = require('cors');
+const { spawn } = require('child_process');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger');
-const { spawn } = require('child_process');
-const path = require('path');
-
+const cors = require('cors');
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
-// Enable CORS
+// Enable CORS for all routes
 app.use(cors());
 
-// Serve Swagger documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+function callPythonScript(args) {
+  return new Promise((resolve, reject) => {
+    const py = spawn('python3', ['boxoff.py', ...args]);
+    let data = '';
+    let error = '';
 
-// Health check endpoint
+    py.stdout.on('data', (chunk) => {
+      data += chunk;
+    });
+
+    py.stderr.on('data', (chunk) => {
+      error += chunk;
+    });
+
+    py.on('close', (code) => {
+      if (error) {
+        reject(error.trim());
+      } else {
+        try {
+          const json = JSON.parse(data);
+          resolve(json);
+        } catch (e) {
+          reject('Failed to parse Python output: ' + data);
+        }
+      }
+    });
+  });
+}
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 /**
  * @swagger
  * /health:
@@ -23,7 +48,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  *     description: Returns OK if the server is running
  *     responses:
  *       200:
- *         description: Server is running
+ *         description: Server is healthy
  *         content:
  *           text/plain:
  *             schema:
@@ -34,44 +59,12 @@ app.get('/health', (req, res) => {
   res.send('OK!');
 });
 
-// Helper function to run Python script
-const runPythonScript = (scriptPath, args) => {
-  return new Promise((resolve, reject) => {
-    // Use full path to Python in Vercel environment
-    const pythonPath = process.env.PYTHON_PATH || 'python';
-    const pythonProcess = spawn(pythonPath, [scriptPath, ...args]);
-    let result = '';
-    let error = '';
-
-    pythonProcess.stdout.on('data', (data) => {
-      result += data.toString();
-    });
-
-    pythonProcess.stderr.on('data', (data) => {
-      error += data.toString();
-    });
-
-    pythonProcess.on('close', (code) => {
-      if (code !== 0) {
-        reject(new Error(`Python process exited with code ${code}: ${error}`));
-      } else {
-        try {
-          resolve(JSON.parse(result));
-        } catch (e) {
-          reject(new Error(`Failed to parse Python output: ${result}`));
-        }
-      }
-    });
-  });
-};
-
-// Daily box office endpoint
 /**
  * @swagger
  * /daily:
  *   get:
  *     summary: Get daily box office data
- *     description: Retrieves box office data for a specific date
+ *     description: Retrieve box office data for a specific date
  *     parameters:
  *       - in: query
  *         name: date
@@ -79,276 +72,263 @@ const runPythonScript = (scriptPath, args) => {
  *         schema:
  *           type: string
  *           format: date
+ *           example: "2024-03-20"
  *         description: Date in YYYY-MM-DD format
  *     responses:
  *       200:
- *         description: Box office data for the specified date
+ *         description: Daily box office data
  *       400:
- *         description: Invalid date format
+ *         description: Missing date parameter
  *       500:
  *         description: Server error
  */
-app.get('/daily', async (req, res) => {
-  try {
-    const { date } = req.query;
-    if (!date) {
-      return res.status(400).json({ error: 'Date parameter is required' });
-    }
-    const result = await runPythonScript('boxoff.py', ['daily', date]);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+app.get('/daily', (req, res) => {
+  const date = req.query.date;
+  if (!date) {
+    return res.status(400).json({ error: 'Missing date query parameter (YYYY-MM-DD)' });
   }
+  callPythonScript(['daily', date])
+    .then(result => res.json(result))
+    .catch(error => res.status(500).json({ error }));
 });
 
-// Weekend box office endpoint
 /**
  * @swagger
  * /weekend:
  *   get:
  *     summary: Get weekend box office data
- *     description: Retrieves box office data for a specific weekend
+ *     description: Retrieve box office data for a specific weekend
  *     parameters:
  *       - in: query
  *         name: year
  *         required: true
  *         schema:
  *           type: integer
- *         description: Year (e.g., 2024)
+ *           example: 2024
+ *         description: Year in YYYY format
  *       - in: query
  *         name: week
  *         required: true
  *         schema:
  *           type: integer
- *         description: Week number (1-52)
+ *           example: 12
+ *         description: Week number
  *     responses:
  *       200:
- *         description: Box office data for the specified weekend
+ *         description: Weekend box office data
  *       400:
- *         description: Invalid parameters
+ *         description: Missing year or week parameters
  *       500:
  *         description: Server error
  */
-app.get('/weekend', async (req, res) => {
-  try {
-    const { year, week } = req.query;
-    if (!year || !week) {
-      return res.status(400).json({ error: 'Year and week parameters are required' });
-    }
-    const result = await runPythonScript('boxoff.py', ['weekend', year, week]);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+app.get('/weekend', (req, res) => {
+  const year = req.query.year;
+  const week = req.query.week;
+  if (!year || !week) {
+    return res.status(400).json({ error: 'Missing year or week query parameters (YYYY WW)' });
   }
+  callPythonScript(['weekend', year, week])
+    .then(result => res.json(result))
+    .catch(error => res.status(500).json({ error }));
 });
 
-// Weekly box office endpoint
 /**
  * @swagger
  * /weekly:
  *   get:
  *     summary: Get weekly box office data
- *     description: Retrieves box office data for a specific week
+ *     description: Retrieve box office data for a specific week
  *     parameters:
  *       - in: query
  *         name: year
  *         required: true
  *         schema:
  *           type: integer
- *         description: Year (e.g., 2024)
+ *           example: 2024
+ *         description: Year in YYYY format
  *       - in: query
  *         name: week
  *         required: true
  *         schema:
  *           type: integer
- *         description: Week number (1-52)
+ *           example: 12
+ *         description: Week number
  *     responses:
  *       200:
- *         description: Box office data for the specified week
+ *         description: Weekly box office data
  *       400:
- *         description: Invalid parameters
+ *         description: Missing year or week parameters
  *       500:
  *         description: Server error
  */
-app.get('/weekly', async (req, res) => {
-  try {
-    const { year, week } = req.query;
-    if (!year || !week) {
-      return res.status(400).json({ error: 'Year and week parameters are required' });
-    }
-    const result = await runPythonScript('boxoff.py', ['weekly', year, week]);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+app.get('/weekly', (req, res) => {
+  const year = req.query.year;
+  const week = req.query.week;
+  if (!year || !week) {
+    return res.status(400).json({ error: 'Missing year or week query parameters (YYYY WW)' });
   }
+  callPythonScript(['weekly', year, week])
+    .then(result => res.json(result))
+    .catch(error => res.status(500).json({ error }));
 });
 
-// Monthly box office endpoint
 /**
  * @swagger
  * /monthly:
  *   get:
  *     summary: Get monthly box office data
- *     description: Retrieves box office data for a specific month
+ *     description: Retrieve box office data for a specific month
  *     parameters:
  *       - in: query
  *         name: year
  *         required: true
  *         schema:
  *           type: integer
- *         description: Year (e.g., 2024)
+ *           example: 2024
+ *         description: Year in YYYY format
  *       - in: query
  *         name: month
  *         required: true
  *         schema:
  *           type: integer
+ *           minimum: 1
+ *           maximum: 12
+ *           example: 3
  *         description: Month number (1-12)
  *     responses:
  *       200:
- *         description: Box office data for the specified month
+ *         description: Monthly box office data
  *       400:
- *         description: Invalid parameters
+ *         description: Missing year or month parameters
  *       500:
  *         description: Server error
  */
-app.get('/monthly', async (req, res) => {
-  try {
-    const { year, month } = req.query;
-    if (!year || !month) {
-      return res.status(400).json({ error: 'Year and month parameters are required' });
-    }
-    const result = await runPythonScript('boxoff.py', ['monthly', year, month]);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+app.get('/monthly', (req, res) => {
+  const year = req.query.year;
+  const month = req.query.month;
+  if (!year || !month) {
+    return res.status(400).json({ error: 'Missing year or month query parameters (YYYY MM)' });
   }
+  callPythonScript(['monthly', year, month])
+    .then(result => res.json(result))
+    .catch(error => res.status(500).json({ error }));
 });
 
-// Seasonal box office endpoint
 /**
  * @swagger
  * /seasonal:
  *   get:
  *     summary: Get seasonal box office data
- *     description: Retrieves box office data for a specific season
+ *     description: Retrieve box office data for a specific season
  *     parameters:
  *       - in: query
  *         name: year
  *         required: true
  *         schema:
  *           type: integer
- *         description: Year (e.g., 2024)
+ *           example: 2024
+ *         description: Year in YYYY format
  *       - in: query
  *         name: season
  *         required: true
  *         schema:
  *           type: string
  *           enum: [spring, summer, fall, winter]
+ *           example: spring
  *         description: Season name
  *     responses:
  *       200:
- *         description: Box office data for the specified season
+ *         description: Seasonal box office data
  *       400:
- *         description: Invalid parameters
+ *         description: Missing year or season parameters
  *       500:
  *         description: Server error
  */
-app.get('/seasonal', async (req, res) => {
-  try {
-    const { year, season } = req.query;
-    if (!year || !season) {
-      return res.status(400).json({ error: 'Year and season parameters are required' });
-    }
-    const result = await runPythonScript('boxoff.py', ['seasonal', year, season]);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+app.get('/seasonal', (req, res) => {
+  const year = req.query.year;
+  const season = req.query.season;
+  if (!year || !season) {
+    return res.status(400).json({ error: 'Missing year or season query parameters (YYYY [spring|summer|fall|winter])' });
   }
+  callPythonScript(['seasonal', year, season])
+    .then(result => res.json(result))
+    .catch(error => res.status(500).json({ error }));
 });
 
-// Quarterly box office endpoint
 /**
  * @swagger
  * /quarterly:
  *   get:
  *     summary: Get quarterly box office data
- *     description: Retrieves box office data for a specific quarter
+ *     description: Retrieve box office data for a specific quarter
  *     parameters:
- *       - in: query
- *         name: year
- *         required: true
- *         schema:
- *           type: integer
- *         description: Year (e.g., 2024)
  *       - in: query
  *         name: quarter
  *         required: true
  *         schema:
  *           type: integer
- *           enum: [1, 2, 3, 4]
+ *           minimum: 1
+ *           maximum: 4
+ *           example: 1
  *         description: Quarter number (1-4)
+ *       - in: query
+ *         name: year
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 2024
+ *         description: Year in YYYY format
  *     responses:
  *       200:
- *         description: Box office data for the specified quarter
+ *         description: Quarterly box office data
  *       400:
- *         description: Invalid parameters
+ *         description: Missing quarter or year parameters
  *       500:
  *         description: Server error
  */
-app.get('/quarterly', async (req, res) => {
-  try {
-    const { year, quarter } = req.query;
-    if (!year || !quarter) {
-      return res.status(400).json({ error: 'Year and quarter parameters are required' });
-    }
-    const result = await runPythonScript('boxoff.py', ['quarterly', year, quarter]);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+app.get('/quarterly', (req, res) => {
+  const quarter = req.query.quarter;
+  const year = req.query.year;
+  if (!quarter || !year) {
+    return res.status(400).json({ error: 'Missing quarter or year query parameters (Q YYYY)' });
   }
+  callPythonScript(['quarterly', quarter, year])
+    .then(result => res.json(result))
+    .catch(error => res.status(500).json({ error }));
 });
 
-// Yearly box office endpoint
 /**
  * @swagger
  * /yearly:
  *   get:
  *     summary: Get yearly box office data
- *     description: Retrieves box office data for a specific year
+ *     description: Retrieve box office data for a specific year
  *     parameters:
  *       - in: query
  *         name: year
  *         required: true
  *         schema:
  *           type: integer
- *         description: Year (e.g., 2024)
+ *           example: 2024
+ *         description: Year in YYYY format
  *     responses:
  *       200:
- *         description: Box office data for the specified year
+ *         description: Yearly box office data
  *       400:
- *         description: Invalid parameters
+ *         description: Missing year parameter
  *       500:
  *         description: Server error
  */
-app.get('/yearly', async (req, res) => {
-  try {
-    const { year } = req.query;
-    if (!year) {
-      return res.status(400).json({ error: 'Year parameter is required' });
-    }
-    const result = await runPythonScript('boxoff.py', ['yearly', year]);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+app.get('/yearly', (req, res) => {
+  const year = req.query.year;
+  if (!year) {
+    return res.status(400).json({ error: 'Missing year query parameter (YYYY)' });
   }
+  callPythonScript(['yearly', year])
+    .then(result => res.json(result))
+    .catch(error => res.status(500).json({ error }));
 });
 
-// For local development
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-  });
-}
-
-// Export the Express app for Vercel
-module.exports = app; 
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+}); 

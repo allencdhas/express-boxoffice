@@ -1,24 +1,23 @@
 {
   "name": "express-boxoffice",
   "version": "1.0.0",
-  "description": "Box Office API with Express and Python",
-  "main": "boxoff.js",
+  "description": "Box Office API with Python integration",
+  "main": "api/index.js",
   "scripts": {
-    "start": "node boxoff.js",
-    "dev": "nodemon boxoff.js",
-    "vercel-build": "./vercel-build.sh",
-    "build": "./vercel-build.sh"
+    "start": "node api/index.js",
+    "dev": "nodemon api/index.js",
+    "vercel-build": "pip install -r requirements.txt"
   },
   "dependencies": {
-    "cors": "^2.8.5",
     "express": "^4.18.2",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.0"
+    "swagger-ui-express": "^5.0.0",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
-    "nodemon": "^3.0.3"
+    "nodemon": "^3.0.2"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=14.0.0"
   }
 }
