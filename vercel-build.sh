@@ -1,9 +1,14 @@
 #!/bin/bash
-# Install Python dependencies
-pip install -r requirements.txt
+set -e
 
-# Install Node.js dependencies
+echo "Installing Python packages..."
+python -m pip install --upgrade pip
+python -m pip install boxoffice_api==1.2.2
+
+echo "Installing Node.js packages..."
 npm install
 
-# Make Python script executable
-chmod +x boxoff.py 
+echo "Making Python script executable..."
+chmod +x boxoff.py
+
+echo "Build completed successfully!" 

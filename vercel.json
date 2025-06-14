@@ -4,14 +4,6 @@
     {
       "src": "boxoff.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "requirements.txt",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "boxoff.py",
-      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -21,7 +13,6 @@
     }
   ],
   "env": {
-    "PYTHON_VERSION": "3.10",
-    "PYTHONPATH": "."
+    "PYTHON_VERSION": "3.10"
   }
 } 
