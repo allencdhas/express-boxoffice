@@ -31,21 +31,28 @@ app.get('/health', (req, res) => {
 // Helper function to run Python script
 const runPythonScript = (scriptPath, args) => {
   return new Promise((resolve, reject) => {
-    // Use python3.9 explicitly in Vercel environment
-    const pythonPath = process.env.VERCEL ? 'python3.9' : 'python3';
+    // In Vercel environment, use the system Python
+    const pythonPath = process.env.VERCEL ? 'python' : 'python3';
+    console.log('Using Python path:', pythonPath);
+    console.log('Script path:', scriptPath);
+    console.log('Arguments:', args);
+
     const pythonProcess = spawn(pythonPath, [scriptPath, ...args]);
     let result = '';
     let error = '';
 
     pythonProcess.stdout.on('data', (data) => {
       result += data.toString();
+      console.log('Python stdout:', data.toString());
     });
 
     pythonProcess.stderr.on('data', (data) => {
       error += data.toString();
+      console.error('Python stderr:', data.toString());
     });
 
     pythonProcess.on('close', (code) => {
+      console.log('Python process exited with code:', code);
       if (code !== 0) {
         reject(new Error(`Python process exited with code ${code}: ${error}`));
       } else {
